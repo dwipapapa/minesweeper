@@ -8,9 +8,9 @@ controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
 })
 sprites.onOverlap(SpriteKind.Cursor, SpriteKind.Food, function (sprite, otherSprite) {
     if (controller.A.isPressed()) {
-        if (tiles.tileIs(tiles.locationOfSprite(Cursed_Cursor), assets.tile`myTile0`)) {
-            Desto_Check_Neibour(sprites.readDataNumber(otherSprite, "col"), sprites.readDataNumber(otherSprite, "row"))
-        }
+        console.logValue("col", sprites.readDataNumber(otherSprite, "col"))
+        console.logValue("row", sprites.readDataNumber(otherSprite, "row"))
+        Desto_Check_Neibour(sprites.readDataNumber(otherSprite, "col"), sprites.readDataNumber(otherSprite, "row"))
     }
 })
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
@@ -19,10 +19,18 @@ controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     }
 })
 function Check_is_valid (COL: number, ROW: number) {
-    if (!(tiles.tileIs(tiles.locationInDirection(Local, CollisionDirection.Left), assets.tile`myTile`) || tiles.tileIs(tiles.locationInDirection(Local, CollisionDirection.Left), assets.tile`myTile1`))) {
+    console.log("Check is Valid:" + COL + "," + ROW)
+    if (!(tiles.tileIs(tiles.getTileLocation(COL, ROW), assets.tile`myTile`) || tiles.tileIs(tiles.getTileLocation(COL, ROW), assets.tile`myTile1`))) {
+        console.log("Check is Valid returns:" + "True")
         return true
+    } else {
+        console.log("Check is Valid returns:" + "False")
+        return false
     }
-    return false
+}
+function Game_over (num: number, num2: number) {
+    console.log("" + num + ", " + num2)
+    game.over(false)
 }
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
     if (!(tiles.tileIsWall(tiles.locationInDirection(tiles.locationOfSprite(Cursed_Cursor), CollisionDirection.Right)))) {
@@ -43,6 +51,7 @@ function Cover () {
             `, SpriteKind.Food)
         Covers.setFlag(SpriteFlag.GhostThroughTiles, true)
         Covers.setFlag(SpriteFlag.GhostThroughWalls, true)
+        Covers.setFlag(SpriteFlag.Invisible, false)
         tiles.placeOnTile(Covers, value)
         Covers.z = 5
         sprites.setDataNumber(Covers, "col", tiles.locationXY(value, tiles.XY.column))
@@ -57,24 +66,25 @@ controller.down.onEvent(ControllerButtonEvent.Pressed, function () {
 function Desto_Check_Neibour (Col: number, Row: number) {
     Local = tiles.getTileLocation(Col, Row)
     if (Check_is_valid(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Left), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Left), tiles.XY.row))) {
-    	
+        console.log("Destro check neighbor:" + tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Left), tiles.XY.column) + "," + tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Left), tiles.XY.row))
+        Desto_Check_Neibour(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Left), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Left), tiles.XY.row))
     } else {
-        game.over(false)
+        Game_over(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Left), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Left), tiles.XY.row))
     }
     if (Check_is_valid(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Top), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Top), tiles.XY.row))) {
-    	
+        Desto_Check_Neibour(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Top), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Top), tiles.XY.row))
     } else {
-        game.over(false)
+        Game_over(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Top), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Top), tiles.XY.row))
     }
     if (Check_is_valid(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Right), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Right), tiles.XY.row))) {
-    	
+        Desto_Check_Neibour(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Right), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Right), tiles.XY.row))
     } else {
-        game.over(false)
+        Game_over(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Right), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Right), tiles.XY.row))
     }
     if (Check_is_valid(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Bottom), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Bottom), tiles.XY.row))) {
-    	
+        Desto_Check_Neibour(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Bottom), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Bottom), tiles.XY.row))
     } else {
-        game.over(false)
+        Game_over(tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Bottom), tiles.XY.column), tiles.locationXY(tiles.locationInDirection(Local, CollisionDirection.Bottom), tiles.XY.row))
     }
 }
 function Make_Mines () {
@@ -91,8 +101,8 @@ function Desto_Search_cover (col: number, row: number) {
         }
     }
 }
-let Covers: Sprite = null
 let Local: tiles.Location = null
+let Covers: Sprite = null
 let Cursed_Cursor: Sprite = null
 tiles.setSmallTilemap(tilemap`level1`)
 Cursed_Cursor = sprites.create(img`
@@ -105,7 +115,6 @@ Cursed_Cursor = sprites.create(img`
     . f 1 1 1 f 1 f 
     . . f f f . f . 
     `, SpriteKind.Cursor)
-tiles.placeOnTile(Cursed_Cursor, tiles.locationOfSprite(Cursed_Cursor))
+tiles.placeOnTile(Cursed_Cursor, tiles.getTileLocation(8, 8))
 Cursed_Cursor.z = 10
 Cover()
-Make_Mines()
